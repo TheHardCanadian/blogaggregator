@@ -45,10 +45,15 @@ func main() {
 
 	cmds := commands{
 		handlers: map[string]func(*state, command) error{
-			"login":    handlerLogin,
-			"register": handlerRegister,
-			"reset":    handlerRemoveUsers,
-			"users":    handlerGetUsers,
+			"login":     handlerLogin,
+			"register":  handlerRegister,
+			"reset":     handlerRemoveUsers,
+			"users":     handlerGetUsers,
+			"agg":       handlerAgg,
+			"addfeed":   handlerAddFeed,
+			"feeds":     handlerGetFeeds,
+			"follow":    handlerFollow,
+			"following": handlerFollowing,
 		},
 	}
 
@@ -63,7 +68,7 @@ func main() {
 	}
 
 	if err := cmds.run(&s, cmd); err != nil {
-		fmt.Println("error running command: %w", err)
+		fmt.Printf("error running command: %v\n", err)
 		os.Exit(1)
 	}
 }
