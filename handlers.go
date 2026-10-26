@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/thehardcanadian/blogaggregator/internal/database"
-	"github.com/thehardcanadian/blogaggregator/internal/rss"
 )
 
 func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
@@ -101,13 +100,25 @@ func handlerGetUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	feed, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
-	if err != nil {
-		return fmt.Errorf("fetch feed: %w", err)
+	if len(cmd.args) < 1 {
+		return fmt.Errorf("agg needs a time_between_reqs argument, e.g. 30s, 1m, 1h")
 	}
 
-	fmt.Printf("%+v\n", feed)
-	return nil
+	timeBetweenRequests, err := time.ParseDuration(cmd.args[0])
+	if err != nil {
+		return fmt.Errorf("parsing time_between_reqs: %w", err)
+	}
+
+	fmt.Printf("Collecting feeds every %s\n", timeBetweenRequests)
+
+	ticker := time.NewTicker(timeBetweenRequests)
+	defer ticker.Stop()
+
+	for ; ; <-ticker.C {
+		if err := scrapeFeeds(s); err != nil {
+			fmt.Printf("error scraping feeds %v\n", err)
+		}
+	}
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
